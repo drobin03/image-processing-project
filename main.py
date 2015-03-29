@@ -16,6 +16,7 @@ class image:
     self.output = []
     self.outputGray = []
     self.outputBackup = []
+    self.solved = []
 
   # Gets the filename from the user
   def getFilename():
@@ -118,6 +119,7 @@ class image:
     self.final = self.fix_perspective()
     self.output = np.copy(self.final)
     self.outputBackup = np.copy(self.output)
+    self.solved = np.copy(self.final)
 
 class OCRmodelClass:
   def __init__(self):
@@ -188,6 +190,71 @@ class OCRmodelClass:
               puzzle[sudoy,sudox] = int(string)
               cv2.putText(image.output,string,(x,y+h),0,1.4,(255,0,0),3)
 
+class puzzleClass:
+  def __init__(self):
+    self.model = np.zeros((9,9),np.uint8)
+    self.original = []
+    self.string_model = ""
+
+  def draw(self,img):
+    squareHeight = len(img)/9
+    squareWidth = len(img[0])/9
+    for i, row in enumerate(self.model):
+      for j, num in enumerate(row):
+        if (self.original[i][j] == 0):
+          posX = (j*squareWidth) + squareWidth/2
+          posY = (i*squareHeight) + squareHeight - 10 # padding
+          cv2.putText(img,str(num),(posX,posY),0,1.4,(255,0,0),3)
+
+  # Solve method modified from this code: https://freepythontips.wordpress.com/2013/09/01/sudoku-solver-in-python/
+  def solve(self):
+    self.original = np.copy(self.model)
+    self.to_string()
+    self.row(list(self.string_model))
+    return self.to_array()
+
+  def to_array(self):
+    s = self.string_model
+    self.model = np.array([[ s[0],  s[1],  s[2],  s[3],  s[4],  s[5],  s[6],  s[7],  s[8] ],
+                           [ s[9],  s[10], s[11], s[12], s[13], s[14], s[15], s[16], s[17] ],
+                           [ s[18], s[19], s[20], s[21], s[22], s[23], s[24], s[25], s[26] ],
+                           [ s[27], s[28], s[29], s[30], s[31], s[32], s[33], s[34], s[35] ],
+                           [ s[36], s[37], s[38], s[39], s[40], s[41], s[42], s[43], s[44] ],
+                           [ s[45], s[46], s[47], s[48], s[49], s[50], s[51], s[52], s[53] ],
+                           [ s[54], s[55], s[56], s[57], s[58], s[59], s[60], s[61], s[62] ],
+                           [ s[63], s[64], s[65], s[66], s[67], s[68], s[69], s[70], s[71] ],
+                           [ s[72], s[73], s[74], s[75], s[76], s[77], s[78], s[79], s[80] ]],np.uint8)
+    return self.model
+
+  def to_string(self):
+    self.string_model = ""
+    for row in self.model:
+      for col in row:
+        self.string_model = self.string_model + str(col)
+
+  def row(self, a):
+    try:
+      i = a.index('0')
+
+      excluded_numbers = set()
+      for j in range(81):
+        if self.same_row(i,j) or self.same_col(i,j) or self.same_block(i,j):
+          excluded_numbers.add(a[j])
+
+      for m in '123456789':
+        if m not in excluded_numbers:
+          attempt = copy.copy(a)
+          attempt[i] = m
+          self.row(attempt)
+
+    except ValueError:
+      # Solved! Save the puzzle
+      self.string_model = ''.join(a)
+
+  def same_row(self,i,j): return (i/9 == j/9)
+  def same_col(self,i,j): return (i-j) % 9 == 0
+  def same_block(self,i,j): return (i/27 == j/27 and i%9/3 == j%9/3)
+
 def main():
   img = image()
   img.captureImage()
@@ -195,15 +262,20 @@ def main():
 
   # Fourth: Grab the numbers (This article may be helpful: http://www.aishack.in/tutorials/sudoku-grabber-with-opencv-extracting-digits/)
   reader = OCRmodelClass()
-  puzzle = np.zeros((9,9),np.uint8)
-  reader.OCR(img,puzzle)
-  print puzzle
+  puzzle = puzzleClass()
+  reader.OCR(img,puzzle.model)
+
+  # Now solve!
+  solved = puzzle.solve()
+  puzzle.draw(img.solved)
+  print puzzle.model
 
   cv2.drawContours(img.orig, [img.grid],-1,(0,255,0),3)
-  # cv2.imshow("Pre-processed", img.processed)
-  # cv2.imshow("Grid", img.orig)
-  # cv2.imshow("Perspective Adjusted", img.final)
+  cv2.imshow("Pre-processed", img.processed)
+  cv2.imshow("Grid", img.orig)
+  cv2.imshow("Perspective Adjusted", img.final)
   cv2.imshow('OCR result',img.output)
+  cv2.imshow('Solved',img.solved)
   cv2.waitKey(0)
 if __name__ == "__main__":
     main()
