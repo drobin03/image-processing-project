@@ -19,7 +19,7 @@ class image:
     self.solved = []
 
   # Gets the filename from the user
-  def getFilename():
+  def getFilename(self):
     filename = raw_input('Enter a file name: ')
     return filename
 
@@ -94,7 +94,7 @@ class image:
     if (len(sys.argv) > 1):
       filename = sys.argv[1]
     else:
-      filename = getFilename()
+      filename = self.getFilename()
 
     # Create a directory to put the resulting images
     result_directory = re.sub("\.[^\.]+$","", filename)
@@ -103,6 +103,8 @@ class image:
       os.makedirs(result_directory)
 
     self.orig = cv2.imread(filename)
+
+    return result_directory
 
   def processImage(self):
     gray_img = cv2.cvtColor(self.orig, cv2.COLOR_BGR2GRAY)
@@ -257,7 +259,7 @@ class puzzleClass:
 
 def main():
   img = image()
-  img.captureImage()
+  result_directory = img.captureImage()
   img.processImage()
 
   # Fourth: Grab the numbers (This article may be helpful: http://www.aishack.in/tutorials/sudoku-grabber-with-opencv-extracting-digits/)
@@ -271,11 +273,11 @@ def main():
   print puzzle.model
 
   cv2.drawContours(img.orig, [img.grid],-1,(0,255,0),3)
-  cv2.imshow("Pre-processed", img.processed)
-  cv2.imshow("Grid", img.orig)
-  cv2.imshow("Perspective Adjusted", img.final)
-  cv2.imshow('OCR result',img.output)
-  cv2.imshow('Solved',img.solved)
-  cv2.waitKey(0)
+  cv2.imwrite(result_directory+"/Pre-processed.jpg", img.processed)
+  cv2.imwrite(result_directory+"/Grid.jpg", img.orig)
+  cv2.imwrite(result_directory+"/PerspectiveAdjusted.jpg", img.final)
+  cv2.imwrite(result_directory+"/OCR result.jpg",img.output)
+  cv2.imwrite(result_directory+"/Solved.jpg",img.solved)
+  #cv2.waitKey(0)
 if __name__ == "__main__":
     main()
