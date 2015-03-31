@@ -101,3 +101,4 @@ DEPENDENCIES
   sinatra
   sinatra-asset-pipeline
   thin
+  tilt (~> 1.4.1)
