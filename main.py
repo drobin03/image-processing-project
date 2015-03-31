@@ -42,6 +42,11 @@ class image:
     # Find the largest blob
     contours.sort(key=cv2.contourArea)
     biggest = contours.pop()
+
+    # cv2.drawContours(self.orig, contours,-1,(0,255,0),3)
+    # cv2.imshow("test", self.orig)
+    # cv2.imshow("test", contour_image)
+    # cv2.waitKey(0)
     return biggest
 
   # Rectify makes sure that the points of the image are mapped correctly

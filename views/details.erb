@@ -1,0 +1,29 @@
+<%
+image_path = "/images/" + image_name + "/"
+results = ["Pre-processed.jpg","Grid.jpg", "PerspectiveAdjusted.jpg", "OCR result.jpg", "Solved.jpg"]
+solution = "Solved.jpg"
+%>
+<div class="container">
+  <h1>Results</h1>
+  <p><a href="/" class="btn btn-small btn-default">Back</a></p>
+  <% if image_name %>
+    <table>
+      <tr>
+        <td>
+          <h3>Original</h3>
+          <img src="/images/<%= image_name %>.jpg"/>
+        </td>
+        <td>
+          <h3>Solution</h3>
+          <img src="<%= image_path + solution %>" />
+        </td>
+      </tr>
+    </table>
+    <h2>Steps</h2>
+    <div class="steps">
+      <% results.each do |image| %>
+        <img src="<%= image_path + image %>"/>
+      <% end %>
+    </div>
+  <% end %>
+</div>
