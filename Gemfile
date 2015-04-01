@@ -14,3 +14,7 @@ gem 'sass'
 gem 'sinatra-asset-pipeline'
 gem 'bootstrap-sass'
 gem 'compass'
+
+group :production do
+  gem 'unicorn'
+end
