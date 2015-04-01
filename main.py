@@ -30,8 +30,8 @@ class image:
     cv2.bitwise_not(thresholded, thresholded)
     # connect disconnected lines
     kernel = np.array([[0,1,0],
-                      [1,1,1],
-                      [0,1,0]], np.uint8)
+                       [1,1,1],
+                       [0,1,0]], np.uint8)
     thresholded_dilated = cv2.dilate(thresholded, kernel)
     return thresholded_dilated
 
@@ -40,14 +40,45 @@ class image:
     contours, hierarchy = cv2.findContours(contour_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     # Find the largest blob
-    contours.sort(key=cv2.contourArea)
-    biggest = contours.pop()
+    contours.sort(key=cv2.contourArea, reverse=True)
+    biggest = None
+    for i in contours:
+      peri = cv2.arcLength(i,True)
+      approx = cv2.approxPolyDP(i,0.02*peri,True)
 
-    # cv2.drawContours(self.orig, contours,-1,(0,255,0),3)
+      # length = approx[]
+      if len(approx)==4:
+        # Check if it is close to a rectangular shape
+        grid_approx = self.rectify(approx)
+        (tl, tr, br, bl) = grid_approx
+        widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[0] - bl[0]) ** 2))
+        widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[0] - tl[0]) ** 2))
+        wVariance = abs(widthA-widthB)
+        heightA = np.sqrt(((tr[1] - br[1]) ** 2) + ((tr[1] - br[1]) ** 2))
+        heightB = np.sqrt(((tl[1] - bl[1]) ** 2) + ((tl[1] - bl[1]) ** 2))
+        hVariance = abs(heightA-heightB)
+        if wVariance < .2*widthA and hVariance < .2*heightA:
+          biggest = i
+          break
+
+    # cv2.drawContours(self.orig, [biggest],-1,(0,255,0),3)
     # cv2.imshow("test", self.orig)
-    # cv2.imshow("test", contour_image)
+    # # cv2.imshow("test", contour_image)
     # cv2.waitKey(0)
     return biggest
+
+
+    # self.biggest = None
+    #   self.maxArea = 0
+    #   for i in self.contours:
+    #     area = cv2.contourArea(i)
+    #     if area > 50000: #50000 is an estimated value for the kind of blob we want to evaluate
+    #       peri = cv2.arcLength(i,True)
+    #       approx = cv2.approxPolyDP(i,0.02*peri,True)
+    #       if area > self.maxArea and len(approx)==4:
+    #         self.biggest = approx
+    #         self.maxArea = area
+    #         best_cont = i
 
   # Rectify makes sure that the points of the image are mapped correctly
   # Taken from: http://opencvpython.blogspot.ca/2012/06/sudoku-solver-part-3.html
@@ -112,6 +143,12 @@ class image:
     return result_directory
 
   def processImage(self):
+    # Resize to 450px wide
+    r = 450.0 / self.orig.shape[1]
+    dim = (450, int(self.orig.shape[0] * r))
+    # perform the actual resizing of the image and show it
+    self.orig = cv2.resize(self.orig, dim, interpolation = cv2.INTER_AREA)
+
     gray_img = cv2.cvtColor(self.orig, cv2.COLOR_BGR2GRAY)
 
     # Below are a series of steps to pull the numbers out of a sudoku puzzle
@@ -265,6 +302,8 @@ class puzzleClass:
 def main():
   img = image()
   result_directory = img.captureImage()
+  if img.orig == None:
+    sys.exit(0)
   img.processImage()
 
   # Fourth: Grab the numbers (This article may be helpful: http://www.aishack.in/tutorials/sudoku-grabber-with-opencv-extracting-digits/)
