@@ -23,6 +23,10 @@ class Site < Sinatra::Base
     erb :results, locals: { image_name: image_name }, layout: false
   end
 
+  get '/details' do
+    erb :details
+  end
+
 
   template :results do
     '<img src="/images/<%= image_name %>/Solved.jpg" />'
