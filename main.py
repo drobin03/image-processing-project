@@ -7,7 +7,7 @@ import pdb
 import copy
 import math
 
-class image:
+class Image:
   def __init__(self):
     self.orig = []
     self.processed = []
@@ -23,7 +23,7 @@ class image:
     filename = raw_input('Enter a file name: ')
     return filename
 
-  def pre_process(self,img, blur_value):
+  def preProcess(self,img, blur_value):
     medBlur = cv2.medianBlur(img,blur_value)
     thresholded = cv2.adaptiveThreshold(medBlur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2) # I took these values straight from the opencv docs, they could be played with (http://docs.opencv.org/trunk/doc/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
     # invert the image
@@ -35,7 +35,7 @@ class image:
     thresholded_dilated = cv2.dilate(thresholded, kernel)
     return thresholded_dilated
 
-  def find_grid(self):
+  def findGrid(self):
     contour_image = copy.copy(self.processed)
     contours, hierarchy = cv2.findContours(contour_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -82,7 +82,7 @@ class image:
 
     return hnew
 
-  def fix_perspective(self):
+  def fixPerspective(self):
     grid_approx = cv2.approxPolyDP(self.grid,0.01*cv2.arcLength(self.grid,True), True );
     grid_approx = self.rectify(grid_approx)
     (tl, tr, br, bl) = grid_approx
@@ -141,19 +141,19 @@ class image:
     # I just took the steps from this article: http://www.codeproject.com/Articles/238114/Realtime-Webcam-Sudoku-Solver
 
     # First: Threshold the image
-    self.processed = self.pre_process(gray_img,blur_value)
+    self.processed = self.preProcess(gray_img,blur_value)
 
     # Second: Detect the grid and crop the original image to contain only the puzzle
-    self.grid = self.find_grid()
+    self.grid = self.findGrid()
     if self.grid is None:
       return None
     # Fix perspective (tilt)
-    self.final = self.fix_perspective()
+    self.final = self.fixPerspective()
     self.output = np.copy(self.final)
     self.outputBackup = np.copy(self.output)
     self.solved = np.copy(self.final)
 
-class OCRmodelClass:
+class OCRModel:
   def __init__(self):
       # samples = np.loadtxt('train/general-samples.data',np.float32)
       # responses = np.loadtxt('train/general-responses.data',np.float32)
@@ -168,7 +168,7 @@ class OCRmodelClass:
       self.iterations = [-1,0,1,2]
       self.lvl = 0 #index of .iterations
 
-  def OCR_prepare(self,image,puzzle):
+  def OCRPrepare(self,image,puzzle):
       #preprocessing for OCR
       #convert image to grayscale
       image.output = np.copy(image.outputBackup)
@@ -177,7 +177,7 @@ class OCRmodelClass:
       gray = cv2.GaussianBlur(gray,(5,5),0)
       image.outputGray = gray
 
-  def OCR_read(self,image,puzzle,morphology_iteration):
+  def OCRRead(self,image,puzzle,morphology_iteration):
     #perform actual OCR using kNearest model
     thresh = cv2.adaptiveThreshold(image.outputGray,255,1,1,7,2)
     if morphology_iteration >= 0:
@@ -220,7 +220,7 @@ class OCRmodelClass:
               puzzle[sudoy,sudox] = int(string)
               cv2.putText(image.output,string,(x,y+h),0,1.4,(255,0,0),3)
 
-class puzzleClass:
+class Puzzle:
   def __init__(self):
     self.model = np.zeros((9,9),np.uint8)
     self.original = []
@@ -285,11 +285,11 @@ class puzzleClass:
     if (np.where(self.model != 0)[0].size < 17 or self.checkSolution() < 0):
       # No puzzle can be solved without 17 clues, according to this study http://www.technologyreview.com/view/426554/mathematicians-solve-minimum-sudoku-problem/
       return self.model
-    self.to_string()
+    self.toString()
     self.row(list(self.string_model))
-    return self.to_array()
+    return self.toArray()
 
-  def to_array(self):
+  def toArray(self):
     s = self.string_model
     self.model = np.array([[ s[0],  s[1],  s[2],  s[3],  s[4],  s[5],  s[6],  s[7],  s[8] ],
                            [ s[9],  s[10], s[11], s[12], s[13], s[14], s[15], s[16], s[17] ],
@@ -302,7 +302,7 @@ class puzzleClass:
                            [ s[72], s[73], s[74], s[75], s[76], s[77], s[78], s[79], s[80] ]],np.uint8)
     return self.model
 
-  def to_string(self):
+  def toString(self):
     self.string_model = ""
     for row in self.model:
       for col in row:
@@ -314,7 +314,7 @@ class puzzleClass:
 
       excluded_numbers = set()
       for j in range(81):
-        if self.same_row(i,j) or self.same_col(i,j) or self.same_block(i,j):
+        if self.sameRow(i,j) or self.sameCol(i,j) or self.sameBlock(i,j):
           excluded_numbers.add(a[j])
 
       for m in '123456789':
@@ -327,12 +327,12 @@ class puzzleClass:
       # Solved! Save the puzzle
       self.string_model = ''.join(a)
 
-  def same_row(self,i,j): return (i/9 == j/9)
-  def same_col(self,i,j): return (i-j) % 9 == 0
-  def same_block(self,i,j): return (i/27 == j/27 and i%9/3 == j%9/3)
+  def sameRow(self,i,j): return (i/9 == j/9)
+  def sameCol(self,i,j): return (i-j) % 9 == 0
+  def sameBlock(self,i,j): return (i/27 == j/27 and i%9/3 == j%9/3)
 
 def main():
-  img = image()
+  img = Image()
   result_directory = img.captureImage()
   if img.orig is None:
     sys.exit(0)
@@ -346,13 +346,13 @@ def main():
 
     error = ""
     # Fourth: Grab the numbers (This article may be helpful: http://www.aishack.in/tutorials/sudoku-grabber-with-opencv-extracting-digits/)
-    reader = OCRmodelClass()
-    puzzle = puzzleClass()
-    reader.OCR_prepare(img,puzzle.model)
+    reader = OCRModel()
+    puzzle = Puzzle()
+    reader.OCRPrepare(img,puzzle.model)
 
     for morphology_val in [-1,0,1]:
       puzzle.model = np.zeros((9,9),np.uint8)
-      reader.OCR_read(img,puzzle.model,morphology_val)
+      reader.OCRRead(img,puzzle.model,morphology_val)
 
       # Now solve!
       solved = puzzle.solve()
