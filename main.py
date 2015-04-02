@@ -373,6 +373,7 @@ def main():
     sys.exit(0)
 
   puzzle.draw(img.solved)
+  print "SOLVED!"
   print puzzle.model
 
   cv2.drawContours(img.orig, [img.grid],-1,(0,255,0),3)
