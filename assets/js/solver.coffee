@@ -21,4 +21,7 @@ $ ->
               $(this).closest('.test-images').removeClass('loading').addClass('loaded')
           else
             $('.test-images').append('<p>Woops, we were unable to find a solution for that puzzle. Please try again.</p>').removeClass('loading')
+        ,
+        error: (response) ->
+          $('.test-images').append('<p>Woops, something went wrong. Please try again.</p>').removeClass('loading')
       })
