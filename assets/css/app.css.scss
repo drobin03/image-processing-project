@@ -14,7 +14,7 @@ img { width:auto; height:300px; padding:10px; }
 table { text-align:center; margin:auto; }
 
 .test-images {
-  text-align:center;
+  text-align:center; min-height:300px;
   a { opacity:1; @include transition(opacity 1s linear); }
   #loading { position:absolute; opacity:0; @include transition(opacity .3s linear); width:100%; height:100%; display:none; z-index:3; }
 
