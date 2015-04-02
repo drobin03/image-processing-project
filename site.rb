@@ -9,7 +9,7 @@ class Site < Sinatra::Base
   register Sinatra::AssetPipeline
 
   get '/' do
-    images = Dir.entries('./public/images/').select { |f| File.fnmatch('*.jpg', f) }
+    images = Dir.entries('./public/images/').select { |f| File.fnmatch('*.jpg', f, File::FNM_CASEFOLD) }
     erb :index, locals: { images: images }
   end
 
