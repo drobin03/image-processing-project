@@ -171,12 +171,11 @@ class OCRmodelClass:
   def OCR_prepare(self,image,puzzle):
       #preprocessing for OCR
       #convert image to grayscale
+      image.output = np.copy(image.outputBackup)
       gray = cv2.cvtColor(image.output, cv2.COLOR_BGR2GRAY)
       #noise removal with gaussian blur
       gray = cv2.GaussianBlur(gray,(5,5),0)
       image.outputGray = gray
-
-      image.output = np.copy(image.outputBackup)
 
   def OCR_read(self,image,puzzle,morphology_iteration):
     #perform actual OCR using kNearest model
@@ -191,8 +190,8 @@ class OCRmodelClass:
     contours,hierarchy = cv2.findContours(morph,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
     thresh = thresh_copy
 
-    squareWidth = len(image.output)/9
-    squareWidth = len(image.output)/9
+    squareWidth = len(image.output[0])/9
+    squareHeight = len(image.output)/9
 
     # testing section
     for cnt in contours:
@@ -205,7 +204,7 @@ class OCRmodelClass:
               x -= diff/2
               w += diff
           sudox = x/squareWidth
-          sudoy = y/squareWidth
+          sudoy = y/squareHeight
           cv2.rectangle(image.output,(x,y),(x+w,y+h),(0,0,255),2)
           #prepare region of interest for OCR kNearest model
           roi = thresh[y:y+h,x:x+w]
@@ -355,9 +354,6 @@ def main():
       puzzle.model = np.zeros((9,9),np.uint8)
       reader.OCR_read(img,puzzle.model,morphology_val)
 
-      # cv2.imshow("OCR", img.output)
-      # cv2.waitKey(0)
-
       # Now solve!
       solved = puzzle.solve()
       if not np.where(solved == 0)[0].any():
@@ -385,6 +381,5 @@ def main():
   cv2.imwrite(result_directory+"/PerspectiveAdjusted.jpg", img.final)
   cv2.imwrite(result_directory+"/OCR result.jpg",img.output)
   cv2.imwrite(result_directory+"/Solved.jpg",img.solved)
-  #cv2.waitKey(0)
 if __name__ == "__main__":
     main()
