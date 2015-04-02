@@ -329,6 +329,7 @@ def main():
     sys.exit(0)
 
   for blur_value in [3,5]:
+    print "Attempting to find grid with blur value ", blur_value
     img.processImage(blur_value)
 
     if img.grid is not None:
