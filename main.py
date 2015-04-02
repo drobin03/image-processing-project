@@ -23,8 +23,8 @@ class image:
     filename = raw_input('Enter a file name: ')
     return filename
 
-  def pre_process(self,img):
-    medBlur = cv2.medianBlur(img,5)
+  def pre_process(self,img, blur_value):
+    medBlur = cv2.medianBlur(img,blur_value)
     thresholded = cv2.adaptiveThreshold(medBlur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2) # I took these values straight from the opencv docs, they could be played with (http://docs.opencv.org/trunk/doc/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
     # invert the image
     cv2.bitwise_not(thresholded, thresholded)
@@ -46,7 +46,6 @@ class image:
       peri = cv2.arcLength(i,True)
       approx = cv2.approxPolyDP(i,0.02*peri,True)
 
-      # length = approx[]
       if len(approx)==4:
         # Check if it is close to a rectangular shape
         grid_approx = self.rectify(approx)
@@ -62,23 +61,10 @@ class image:
           break
 
     # cv2.drawContours(self.orig, [biggest],-1,(0,255,0),3)
-    # cv2.imshow("test", self.orig)
-    # # cv2.imshow("test", contour_image)
+    # cv2.imshow("Grid", self.orig)
+    # # cv2.imshow("Processed", self.processed)
     # cv2.waitKey(0)
     return biggest
-
-
-    # self.biggest = None
-    #   self.maxArea = 0
-    #   for i in self.contours:
-    #     area = cv2.contourArea(i)
-    #     if area > 50000: #50000 is an estimated value for the kind of blob we want to evaluate
-    #       peri = cv2.arcLength(i,True)
-    #       approx = cv2.approxPolyDP(i,0.02*peri,True)
-    #       if area > self.maxArea and len(approx)==4:
-    #         self.biggest = approx
-    #         self.maxArea = area
-    #         best_cont = i
 
   # Rectify makes sure that the points of the image are mapped correctly
   # Taken from: http://opencvpython.blogspot.ca/2012/06/sudoku-solver-part-3.html
@@ -142,7 +128,7 @@ class image:
 
     return result_directory
 
-  def processImage(self):
+  def processImage(self,blur_value):
     # Resize to 450px wide
     r = 450.0 / self.orig.shape[1]
     dim = (450, int(self.orig.shape[0] * r))
@@ -155,10 +141,12 @@ class image:
     # I just took the steps from this article: http://www.codeproject.com/Articles/238114/Realtime-Webcam-Sudoku-Solver
 
     # First: Threshold the image
-    self.processed = self.pre_process(gray_img)
+    self.processed = self.pre_process(gray_img,blur_value)
 
     # Second: Detect the grid and crop the original image to contain only the puzzle
     self.grid = self.find_grid()
+    if self.grid is None:
+      return None
     # Fix perspective (tilt)
     self.final = self.fix_perspective()
     self.output = np.copy(self.final)
@@ -180,7 +168,7 @@ class OCRmodelClass:
       self.iterations = [-1,0,1,2]
       self.lvl = 0 #index of .iterations
 
-  def OCR(self,image,puzzle):
+  def OCR_prepare(self,image,puzzle):
       #preprocessing for OCR
       #convert image to grayscale
       gray = cv2.cvtColor(image.output, cv2.COLOR_BGR2GRAY)
@@ -189,7 +177,6 @@ class OCRmodelClass:
       image.outputGray = gray
 
       image.output = np.copy(image.outputBackup)
-      self.OCR_read(image,puzzle,0)
 
   def OCR_read(self,image,puzzle,morphology_iteration):
     #perform actual OCR using kNearest model
@@ -250,9 +237,55 @@ class puzzleClass:
           posY = (i*squareHeight) + squareHeight - 10 # padding
           cv2.putText(img,str(num),(posX,posY),0,1.4,(255,0,0),3)
 
+  def checkSolution(self):
+    #check puzzle using three main rules
+    err = 0 #error code
+    #1) no number shall appear more than once in a row
+    for x in range(9): #for each row
+        #count how many of each number exists
+        check = np.bincount(self.model[x,:])
+        for i in range(len(check)):
+            if i==0:
+                if check[i]!=0:
+                    err = 1 #incomplete, when the puzzle is complete no zeros should exist
+            else:
+                if check[i]>1:
+                    err = -1 #incorrect, there can't be more than one of any number
+                    print "ERROR in row ",x," with ",i
+                    return err
+    #2) no number shall appear more than once in a column
+    for y in range(9): #for each column
+        check = np.bincount(self.model[:,y])
+        for i in range(len(check)):
+            if i==0:
+                if check[i]!=0:
+                    err = 1 #incomplete
+            else:
+                if check[i]>1:
+                    err = -1 #incorrect
+                    print "ERROR in col ",y," with ",i
+                    return err
+    #3) no number shall appear more than once in a 3x3 cell
+    for x in range(3):
+        for y in range(3):
+            check = np.bincount(self.model[x*3:x*3+3,y*3:y*3+3].flatten())
+            for i in range(len(check)):
+                if i==0:
+                    if check[i]!=0:
+                        err = 1 #incomplete
+                else:
+                    if check[i]>1:
+                        err = -1 #incorrect
+                        print "ERROR in box ",x,y," with ",i
+                        return err
+    return err
+
   # Solve method modified from this code: https://freepythontips.wordpress.com/2013/09/01/sudoku-solver-in-python/
   def solve(self):
     self.original = np.copy(self.model)
+    if (np.where(self.model != 0)[0].size < 17 or self.checkSolution() < 0):
+      # No puzzle can be solved without 17 clues, according to this study http://www.technologyreview.com/view/426554/mathematicians-solve-minimum-sudoku-problem/
+      return self.model
     self.to_string()
     self.row(list(self.string_model))
     return self.to_array()
@@ -302,17 +335,47 @@ class puzzleClass:
 def main():
   img = image()
   result_directory = img.captureImage()
-  if img.orig == None:
+  if img.orig is None:
     sys.exit(0)
-  img.processImage()
 
-  # Fourth: Grab the numbers (This article may be helpful: http://www.aishack.in/tutorials/sudoku-grabber-with-opencv-extracting-digits/)
-  reader = OCRmodelClass()
-  puzzle = puzzleClass()
-  reader.OCR(img,puzzle.model)
+  for blur_value in [3,5]:
+    img.processImage(blur_value)
 
-  # Now solve!
-  solved = puzzle.solve()
+    if img.grid is not None:
+      error = "Unfortunately we could not find a grid in that image. Please make sure that the grid takes up most of the image and isn't too distorted."
+      next
+
+    error = ""
+    # Fourth: Grab the numbers (This article may be helpful: http://www.aishack.in/tutorials/sudoku-grabber-with-opencv-extracting-digits/)
+    reader = OCRmodelClass()
+    puzzle = puzzleClass()
+    reader.OCR_prepare(img,puzzle.model)
+
+    for morphology_val in [-1,0,1]:
+      puzzle.model = np.zeros((9,9),np.uint8)
+      reader.OCR_read(img,puzzle.model,morphology_val)
+
+      # cv2.imshow("OCR", img.output)
+      # cv2.waitKey(0)
+
+      # Now solve!
+      solved = puzzle.solve()
+      if not np.where(solved == 0)[0].any():
+        break
+
+    if np.where(solved == 0)[0].any():
+      # No solution found
+      error = "No solution found"
+      next
+
+    if puzzle.checkSolution() == 0:
+      error = ''
+      break
+
+  if error:
+    print error
+    sys.exit(0)
+
   puzzle.draw(img.solved)
   print puzzle.model
 
