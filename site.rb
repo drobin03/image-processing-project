@@ -19,8 +19,9 @@ class Site < Sinatra::Base
   end
 
   get '/results' do
-    image_name = params[:image].sub('.jpg', '')
-    erb :results, locals: { image_name: image_name }, layout: false
+    image_name = params[:image].sub(/\..*$/, '')
+    ext = params[:image].sub(/^.*\./, '')
+    erb :results, locals: { image_name: image_name, ext: ext }, layout: false
   end
 
   get '/details' do
