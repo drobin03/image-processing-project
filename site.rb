@@ -14,8 +14,8 @@ class Site < Sinatra::Base
   end
 
   post '/solve' do
-    image_name = params[:image].sub('.jpg', '')
-    puzzle = `python main.py public/images/#{image_name}.jpg`
+    image_name = params[:image]
+    puzzle = `python main.py public/images/#{image_name}`
   end
 
   get '/results' do
