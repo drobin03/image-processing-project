@@ -60,10 +60,6 @@ class Image:
           biggest = i
           break
 
-    # cv2.drawContours(self.orig, [biggest],-1,(0,255,0),3)
-    # cv2.imshow("Grid", self.orig)
-    # # cv2.imshow("Processed", self.processed)
-    # cv2.waitKey(0)
     return biggest
 
   # Rectify makes sure that the points of the image are mapped correctly
@@ -137,9 +133,6 @@ class Image:
 
     gray_img = cv2.cvtColor(self.orig, cv2.COLOR_BGR2GRAY)
 
-    # Below are a series of steps to pull the numbers out of a sudoku puzzle
-    # I just took the steps from this article: http://www.codeproject.com/Articles/238114/Realtime-Webcam-Sudoku-Solver
-
     # First: Threshold the image
     self.processed = self.preProcess(gray_img,blur_value)
 
@@ -155,8 +148,6 @@ class Image:
 
 class OCRModel:
   def __init__(self):
-      # samples = np.loadtxt('train/general-samples.data',np.float32)
-      # responses = np.loadtxt('train/general-responses.data',np.float32)
       samples = np.loadtxt('data/generalsamples_mikedeff.data',np.float32)
       responses = np.loadtxt('data/generalresponses_mikedeff.data',np.float32)
       responses = responses.reshape((responses.size,1))
@@ -286,7 +277,7 @@ class Puzzle:
       # No puzzle can be solved without 17 clues, according to this study http://www.technologyreview.com/view/426554/mathematicians-solve-minimum-sudoku-problem/
       return self.model
     self.toString()
-    self.row(list(self.string_model))
+    self.recursiveSolve(list(self.string_model))
     return self.toArray()
 
   def toArray(self):
@@ -308,7 +299,7 @@ class Puzzle:
       for col in row:
         self.string_model = self.string_model + str(col)
 
-  def row(self, a):
+  def recursiveSolve(self, a):
     try:
       i = a.index('0')
 
@@ -321,7 +312,7 @@ class Puzzle:
         if m not in excluded_numbers:
           attempt = copy.copy(a)
           attempt[i] = m
-          self.row(attempt)
+          self.recursiveSolve(attempt)
 
     except ValueError:
       # Solved! Save the puzzle
@@ -338,6 +329,7 @@ def main():
     sys.exit(0)
 
   for blur_value in [3,5]:
+    print "Attempting to find grid with blur value ", blur_value
     img.processImage(blur_value)
 
     if img.grid is not None:
@@ -345,7 +337,7 @@ def main():
       next
 
     error = ""
-    # Fourth: Grab the numbers (This article may be helpful: http://www.aishack.in/tutorials/sudoku-grabber-with-opencv-extracting-digits/)
+    # Fourth: Grab the numbers
     reader = OCRModel()
     puzzle = Puzzle()
     reader.OCRPrepare(img,puzzle.model)
@@ -355,6 +347,7 @@ def main():
       reader.OCRRead(img,puzzle.model,morphology_val)
 
       # Now solve!
+      print "Attempting Morphology value ", morphology_val
       solved = puzzle.solve()
       if not np.where(solved == 0)[0].any():
         break
