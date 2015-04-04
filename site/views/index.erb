@@ -1,0 +1,19 @@
+<div class="container">
+  <h1><a href="/"><span class="light">Sudoku</span>Solver</a></h1>
+  <p class="large">Choose one of our test images to get started.</p>
+  <%= erb :_upload_form, layout: false %>
+  <div class="test-images">
+    <div id="loading"><%= erb(:_loading_animation, :layout => false) %></div>
+    <% images.each do |img| %>
+      <a href="#" data-image-link="<%= img %>">
+        <img src="/images/<%= img %>"/>
+      </a>
+    <% end %>
+    <form id="image-upload-form" action="/upload">
+    </form>
+    <div id="results"></div>
+  </div>
+  <div id="errors"></div>
+  <p id="start-over-link" class="hidden"><a href="/" class="btn btn-default">Start Over</a></p>
+  <p><a class="btn btn-primary" href="/details">View Process</a></p>
+</div>

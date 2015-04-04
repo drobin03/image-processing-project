@@ -1,0 +1,76 @@
+<%
+image_name = "sudoku"
+image_path = "/images/" + image_name + "/"
+results = ["Pre-processed.jpg","Grid.jpg", "PerspectiveAdjusted.jpg", "OCR result.jpg", "Solved.jpg"]
+solution = "Solved.jpg"
+%>
+<div class="container">
+  <h1>Results</h1>
+  <p><a href="/" class="btn btn-small btn-default">Back</a></p>
+  <% if image_name %>
+    <table>
+      <tr>
+        <td>
+          <h3>Original</h3>
+          <img src="/images/<%= image_name %>.jpg"/>
+        </td>
+        <td>
+          <h3>Solution</h3>
+          <img src="<%= image_path + solution %>" />
+        </td>
+      </tr>
+    </table>
+    <h2>Process</h2>
+    <div class="steps">
+      <div class="step">
+        <img src="<%= image_path %>Pre-processed.jpg"/>
+        <div class="caption">
+          <p>
+            <i>Step 1</i><br/>
+            Process the image so that the grid can be found.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <img src="<%= image_path %>Grid.jpg"/>
+        <div class="caption">
+          <p>
+            <i>Step 2</i><br/>
+            Grab the grid out of the image.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <img src="<%= image_path %>PerspectiveAdjusted.jpg"/>
+        <div class="caption">
+          <p>
+            <i>Step 3</i><br/>
+            Adjust the perspective so that the grid appears as if you are looking straight down at it.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <img src="<%= image_path %>OCR result.jpg"/>
+        <div class="caption">
+          <p>
+            <i>Step 3</i><br/>
+            Find the existing numbers on the grid.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <img src="<%= image_path %>Solved.jpg"/>
+        <div class="caption">
+          <p>
+            <i>Step 4</i><br/>
+            Solve the puzzle.
+          </p>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

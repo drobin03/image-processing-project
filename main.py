@@ -157,8 +157,8 @@ class OCRModel:
   def __init__(self):
       # samples = np.loadtxt('train/general-samples.data',np.float32)
       # responses = np.loadtxt('train/general-responses.data',np.float32)
-      samples = np.loadtxt('generalsamples_mikedeff.data',np.float32)
-      responses = np.loadtxt('generalresponses_mikedeff.data',np.float32)
+      samples = np.loadtxt('data/generalsamples_mikedeff.data',np.float32)
+      responses = np.loadtxt('data/generalresponses_mikedeff.data',np.float32)
       responses = responses.reshape((responses.size,1))
 
       #.model uses kNearest to perform OCR
