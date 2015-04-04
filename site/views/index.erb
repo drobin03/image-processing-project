@@ -1,7 +1,6 @@
 <div class="container">
   <h1><a href="/"><span class="light">Sudoku</span>Solver</a></h1>
   <p class="large">Choose one of our test images to get started.</p>
-  <%= erb :_upload_form, layout: false %>
   <div class="test-images">
     <div id="loading"><%= erb(:_loading_animation, :layout => false) %></div>
     <% images.each do |img| %>

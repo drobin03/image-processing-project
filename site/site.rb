@@ -15,7 +15,7 @@ class Site < Sinatra::Base
 
   post '/solve' do
     image_name = params[:image]
-    puzzle = `python ../main.py site/public/images/#{image_name}`
+    puzzle = `cd .. && python main.py site/public/images/#{image_name}`
   end
 
   get '/results' do
